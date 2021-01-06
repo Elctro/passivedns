@@ -678,10 +678,27 @@ void sha256_string(pdns_record *l, char *string, char outputBuffer[65])
     if (strcmp(timestr, hash_datestamp) != 0)
     {
         strcpy(hash_datestamp, timestr);
-        strftime(timebuf, sizeof(timestr), "%U %Y-%m-%d %H:%M:%S", tmpTime);
-        sprintf(timestr, "%s.%03d\n", timebuf, l->last_seen.tv_usec);
-        sha256(timestr, "", hash_datesha256);
-        //printf("%s -- %s\n", timestr, hash_datesha256);
+        
+        FILE *fp = fopen("/dev/urandom" ,"r");
+        if (fp == NULL)
+        {
+            printf("fopen random failed");
+            exit(-1);
+        }
+        else
+        {
+            char myRandomData[65] = {0};
+            ssize_t result = fread(&myRandomData, 1, sizeof myRandomData - 1, fp);
+            if (result < 0)
+            {
+                printf("fread random failed");
+                exit(-1);
+            }
+
+            sha256(myRandomData, "", hash_datesha256);
+
+            fclose(fp);
+        }
     }
 
     sha256(string, hash_datesha256, outputBuffer);
